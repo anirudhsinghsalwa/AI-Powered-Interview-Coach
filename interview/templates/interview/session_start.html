@@ -1,0 +1,194 @@
+{% extends 'interview/base.html' %}
+
+{% block title %}Start Session - Interview Coach Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Pure CSS selector styles for custom radio buttons */
+    .custom-radio-input:checked + .custom-radio-card {
+        border-color: #7C3AED; /* Purple-600 */
+        background-color: #FAF5FF; /* Purple-50 */
+        box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.1), 0 4px 6px -2px rgba(124, 58, 237, 0.05);
+    }
+    
+    .custom-radio-input:checked + .custom-radio-card .indicator {
+        background-color: #7C3AED;
+        border-color: #7C3AED;
+    }
+    
+    .custom-radio-input:checked + .custom-radio-card .indicator-dot {
+        transform: scale(1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6">
+    
+    <!-- Title header -->
+    <div class="text-center mb-10">
+        <h2 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            Configure Your Practice Session
+        </h2>
+        <p class="mt-2 text-sm text-slate-500">
+            Select your focus topic and target difficulty level
+        </p>
+    </div>
+
+    <form method="POST" action="{% url 'session_start' %}" class="space-y-10">
+        {% csrf_token %}
+        
+        <!-- Step 1: Select Topic -->
+        <div>
+            <div class="flex items-center space-x-2 mb-6">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700">1</span>
+                <h3 class="text-lg font-bold text-slate-900">Choose a Focus Topic</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {% for code, label in topics %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="topic" value="{{ code }}" class="sr-only custom-radio-input" {% if forloop.first %}checked{% endif %}>
+                        <div class="custom-radio-card border border-slate-200 rounded-2xl p-5 h-full flex flex-col justify-between hover:border-purple-300 hover:bg-slate-50 transition-all duration-200 premium-shadow">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold">
+                                        {% if code == 'behavioral' %}💬
+                                        {% elif code == 'python' %}🐍
+                                        {% elif code == 'system_design' %}⚙️
+                                        {% elif code == 'data_structures' %}📊
+                                        {% elif code == 'c_prog' %}💻
+                                        {% elif code == 'cpp_prog' %}☕
+                                        {% elif code == 'java_prog' %}☕
+                                        {% elif code == 'web_dev' %}🌐
+                                        {% elif code == 'react_dev' %}⚛️
+                                        {% elif code == 'dbms' %}🧠
+                                        {% elif code == 'sql_db' %}🐘
+                                        {% elif code == 'os' %}⚡
+                                        {% elif code == 'networks' %}🧩
+                                        {% elif code == 'cybersecurity' %}🔐
+                                        {% elif code == 'cloud_devops' %}☁️
+                                        {% elif code == 'sys_prog' %}🤖
+                                        {% else %}💼{% endif %}
+                                    </div>
+                                    <div class="indicator h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center transition-all duration-200">
+                                        <div class="indicator-dot h-2 w-2 rounded-full bg-white transform scale-0 transition-transform duration-200"></div>
+                                    </div>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">{{ label }}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2">
+                                {% if code == 'behavioral' %}STAR method questions, conflict resolution, leadership, teamwork, ethics, communication, ownership mindset.
+                                {% elif code == 'python' %}Python internals, memory management, Django ORM, middleware, authentication, REST APIs, scalability, backend architecture.
+                                {% elif code == 'system_design' %}Scalability, load balancing, caching (Redis), database sharding, microservices, CAP theorem, API gateway, high-level architecture design.
+                                {% elif code == 'data_structures' %}Time/space complexity, arrays, strings, stacks, queues, linked lists, trees, graphs, dynamic programming, greedy algorithms, recursion, backtracking, hashing.
+                                {% elif code == 'c_prog' %}Pointers, memory allocation, structures, file handling, low-level programming concepts, time complexity in C.
+                                {% elif code == 'cpp_prog' %}OOP concepts, STL, memory management, pointers, competitive programming patterns, recursion, graphs, DP.
+                                {% elif code == 'java_prog' %}JVM architecture, OOP principles, collections framework, multithreading, garbage collection, concurrency.
+                                {% elif code == 'web_dev' %}HTML, CSS, JavaScript basics (backend handling only), HTTP protocol, REST APIs, cookies, sessions, authentication flow.
+                                {% elif code == 'react_dev' %}Components, props, state, hooks, lifecycle methods, virtual DOM, rendering optimization.
+                                {% elif code == 'dbms' %}SQL queries, normalization, indexing, joins, transactions, ACID properties, database design.
+                                {% elif code == 'sql_db' %}Advanced SQL, query optimization, indexing strategies, relational modeling.
+                                {% elif code == 'os' %}Process management, threads, scheduling algorithms, deadlocks, memory management, paging, segmentation.
+                                {% elif code == 'networks' %}OSI model, TCP/IP, DNS, HTTP/HTTPS, routing, switching, congestion control, sockets.
+                                {% elif code == 'cybersecurity' %}Authentication, authorization, encryption basics, hashing, HTTPS, common vulnerabilities (SQL injection, XSS).
+                                {% elif code == 'cloud_devops' %}AWS basics, deployment, CI/CD pipelines, Docker fundamentals, containerization, server hosting.
+                                {% elif code == 'sys_prog' %}Memory layout, compilation process, binary execution, OS interaction, low-level execution flow.{% endif %}
+                            </p>
+                        </div>
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 2: Select Difficulty -->
+        <div>
+            <div class="flex items-center space-x-2 mb-6">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700">2</span>
+                <h3 class="text-lg font-bold text-slate-900">Select Difficulty Level</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {% for code, label in difficulties %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="difficulty" value="{{ code }}" class="sr-only custom-radio-input" {% if code == 'medium' %}checked{% endif %}>
+                        <div class="custom-radio-card border border-slate-200 rounded-2xl p-5 flex items-center justify-between hover:border-purple-300 hover:bg-slate-50 transition-all duration-200 premium-shadow">
+                            <div class="flex items-center space-x-4">
+                                <div class="h-8 w-8 rounded-lg flex items-center justify-center font-bold text-sm
+                                            {% if code == 'easy' %}bg-green-50 text-green-600
+                                            {% elif code == 'medium' %}bg-yellow-50 text-yellow-600
+                                            {% else %}bg-red-50 text-red-600{% endif %}">
+                                    {% if code == 'easy' %}I
+                                    {% elif code == 'medium' %}II
+                                    {% else %}III{% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">{{ label }}</h4>
+                                    <p class="text-xs text-slate-500">
+                                        {% if code == 'easy' %}Entry-level conceptual questions
+                                        {% elif code == 'medium' %}Intermediate scenario execution
+                                        {% else %}Expert-level architectural designs{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="indicator h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center transition-all duration-200">
+                                <div class="indicator-dot h-2 w-2 rounded-full bg-white transform scale-0 transition-transform duration-200"></div>
+                            </div>
+                        </div>
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 3: Select Assessment Mode -->
+        <div>
+            <div class="flex items-center space-x-2 mb-6">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700">3</span>
+                <h3 class="text-lg font-bold text-slate-900">Select Assessment Mode</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {% for code, label in modes %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="mode" value="{{ code }}" class="sr-only custom-radio-input" {% if code == selected_mode %}checked{% endif %}>
+                        <div class="custom-radio-card border border-slate-200 rounded-2xl p-5 h-full flex flex-col justify-between hover:border-purple-300 hover:bg-slate-50 transition-all duration-200 premium-shadow">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="h-8 w-8 rounded-lg flex items-center justify-center font-bold text-sm bg-purple-50 text-purple-600">
+                                        {% if code == 'mixed' %}🔄
+                                        {% elif code == 'mcq' %}🎯
+                                        {% elif code == 'written' %}📝
+                                        {% else %}💻{% endif %}
+                                    </div>
+                                    <div class="indicator h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center transition-all duration-200">
+                                        <div class="indicator-dot h-2 w-2 rounded-full bg-white transform scale-0 transition-transform duration-200"></div>
+                                    </div>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">{{ label }}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2">
+                                {% if code == 'mixed' %}A blended pool of MCQs, written, and coding tasks.
+                                {% elif code == 'mcq' %}Instant multiple-choice concept evaluations.
+                                {% elif code == 'written' %}Detailed written conceptual evaluations.
+                                {% else %}Practical code challenges in terminal-like inputs.{% endif %}
+                            </p>
+                        </div>
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-6 border-t border-slate-100 flex items-center justify-between">
+            <a href="{% url 'dashboard' %}" class="text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors duration-150">
+                &larr; Back to Dashboard
+            </a>
+            <button type="submit" 
+                    class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-md hover:opacity-95 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+                Generate Questions & Start &rarr;
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

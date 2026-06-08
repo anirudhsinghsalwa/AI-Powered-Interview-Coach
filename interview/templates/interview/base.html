@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Interview Coach Pro{% endblock %}</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="A premium, AI-powered system to practice interview questions, receive structured evaluation, and improve your skills.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Pure CSS Tailwind -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Poppins', sans-serif;
+            background-color: #F8FAFC; /* Slate 50 */
+            color: #0F172A; /* Slate 900 */
+        }
+        
+        /* Glassmorphism utility card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(241, 245, 249, 0.9);
+        }
+
+        /* Custom shadow for Vercel/Linear look */
+        .premium-shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 
+                        0 10px 15px -3px rgba(0, 0, 0, 0.03), 
+                        0 4px 6px -2px rgba(0, 0, 0, 0.02);
+        }
+
+        /* Hover animations */
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 
+                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Gradient focus styles */
+        .gradient-border-focus:focus-within {
+            border-color: transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #8B5CF6, #EC4899);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+
+        /* Custom progress bar transition */
+        .progress-bar-transition {
+            transition: width 0.6s ease-in-out;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'dashboard' %}" class="flex items-center space-x-2">
+                        <!-- Violet-to-pink gradient badge -->
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md">
+                            <span class="text-lg font-extrabold text-white">I</span>
+                        </div>
+                        <span class="text-xl font-bold tracking-tight text-slate-900">
+                            Interview Coach <span class="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-extrabold">Pro</span>
+                        </span>
+                    </a>
+                </div>
+                
+                <nav class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <span class="hidden sm:inline-block text-sm font-medium text-slate-500">
+                            Hi, <span class="text-slate-800 font-semibold">{{ user.username }}</span>
+                        </span>
+                        <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-600 hover:text-purple-600 transition-colors duration-200">
+                            Dashboard
+                        </a>
+                        <form action="{% url 'logout' %}" method="POST" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm font-medium text-slate-600 hover:text-purple-600 transition-colors duration-200 focus:outline-none">
+                                Sign Out
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-sm font-medium text-slate-600 hover:text-purple-600 transition-colors duration-200">
+                            Sign In
+                        </a>
+                        <a href="{% url 'signup' %}" class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 h-9 text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-all duration-200">
+                            Get Started
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <!-- Messages / Notifications -->
+            {% if messages %}
+                <div class="mb-6 space-y-2 max-w-3xl mx-auto">
+                    {% for message in messages %}
+                        <div class="p-4 rounded-2xl border text-sm font-medium flex items-center {% if message.tags == 'error' %}bg-red-50 border-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-50 border-green-100 text-green-700{% else %}bg-blue-50 border-blue-100 text-blue-700{% endif %}">
+                            <span class="flex-grow">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-100 bg-white py-6 mt-12">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400">
+            <p>&copy; 2026 Interview Coach Pro. All rights reserved.</p>
+            <div class="flex space-x-4 mt-4 sm:mt-0">
+                <span class="hover:text-slate-600 transition-colors duration-200">Premium Professional Edition</span>
+                <span>&bull;</span>
+                <span class="hover:text-slate-600 transition-colors duration-200">Server-Side Rendered</span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

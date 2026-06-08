@@ -1,0 +1,207 @@
+{% extends 'interview/base.html' %}
+
+{% block title %}Dashboard - Interview Coach Pro{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-700 via-indigo-800 to-slate-900 p-8 sm:p-12 shadow-xl premium-shadow">
+        <!-- Background decorative blur circles (pure CSS) -->
+        <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-purple-500 opacity-20 blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-indigo-500 opacity-20 blur-3xl"></div>
+
+        <div class="relative z-10 max-w-2xl">
+            <span class="inline-flex items-center rounded-full bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300 ring-1 ring-inset ring-purple-500/20 mb-4">
+                Professional Interview Prep
+            </span>
+            <h1 class="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
+                Master Your Tech Interviews
+            </h1>
+            <p class="mt-4 text-base sm:text-lg text-purple-100/80 leading-relaxed">
+                Practice realistic questions tailored to your field. Write detailed responses and receive professional, structured grading feedback with model answers to improve your results.
+            </p>
+            <div class="mt-8 flex flex-col sm:flex-row flex-wrap gap-4">
+                <a href="{% url 'session_start' %}" 
+                   class="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-purple-900 shadow-md hover:bg-slate-50 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+                    Start Interview
+                </a>
+                <a href="{% url 'session_start' %}?mode=mcq" 
+                   class="inline-flex items-center justify-center rounded-2xl bg-purple-600/30 border border-purple-500/30 px-6 py-4 text-sm font-semibold text-white shadow-md hover:bg-purple-600/40 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+                    Start MCQ Test
+                </a>
+                <a href="#history-section" 
+                   class="inline-flex items-center justify-center rounded-2xl bg-slate-900/40 border border-slate-700/30 px-6 py-4 text-sm font-semibold text-slate-200 shadow-md hover:bg-slate-900/60 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+                    View Results
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Dashboard Section -->
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 tracking-tight mb-6">Performance Overview</h2>
+        
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <!-- Attempts card -->
+            <div class="glass-card premium-shadow rounded-2xl p-6 flex items-center justify-between hover-lift">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Sessions</p>
+                    <h3 class="text-3xl font-bold text-slate-900 mt-2">{{ total_attempts }}</h3>
+                    <p class="text-xs text-slate-500 mt-1">Sessions fully completed</p>
+                </div>
+                <div class="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center">
+                    <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Average score card -->
+            <div class="glass-card premium-shadow rounded-2xl p-6 flex items-center justify-between hover-lift">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Average Performance</p>
+                    <div class="flex items-baseline mt-2 space-x-1">
+                        <h3 class="text-3xl font-bold text-slate-900">{{ avg_score }}%</h3>
+                        <span class="text-sm font-semibold text-slate-500">/ 100%</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Based on scored answers</p>
+                </div>
+                <div class="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Practice mix progress card -->
+            <div class="glass-card premium-shadow rounded-2xl p-6 flex flex-col justify-between hover-lift sm:col-span-2 lg:col-span-1">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Activity Distribution</p>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-600 font-medium">Programming & Development</span>
+                            <span class="text-slate-800 font-bold">
+                                {{ prog_count }} sessions
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-600 font-medium">Systems, Network & DBMS</span>
+                            <span class="text-slate-800 font-bold">
+                                {{ sys_count }} sessions
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-600 font-medium">DSA & Behavioral</span>
+                            <span class="text-slate-800 font-bold">
+                                {{ core_count }} sessions
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 mt-4 border-t border-slate-100 pt-3 flex justify-between items-center">
+                    <span>Keep up the daily practice!</span>
+                    <span class="font-semibold text-purple-600">Pro Tier</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History / Past Attempts Section -->
+    <div id="history-section">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Practice History</h2>
+            <a href="{% url 'session_start' %}" class="text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors duration-200">
+                New Session &rarr;
+            </a>
+        </div>
+
+        {% if history %}
+            <div class="glass-card premium-shadow rounded-3xl overflow-hidden border border-slate-100">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/75 border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                <th class="px-6 py-4">Topic</th>
+                                <th class="px-6 py-4">Difficulty</th>
+                                <th class="px-6 py-4">Date Completed</th>
+                                <th class="px-6 py-4 text-center">Score</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            {% for item in history %}
+                                <tr class="hover:bg-slate-50/50 transition-colors duration-150">
+                                    <td class="px-6 py-4 font-semibold text-slate-800">
+                                        {{ item.topic }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium 
+                                                     {% if item.difficulty == 'Easy' %}bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20
+                                                     {% elif item.difficulty == 'Medium' %}bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20
+                                                     {% else %}bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20{% endif %}">
+                                            {{ item.difficulty }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-500">
+                                        {{ item.created_at|date:"M d, Y H:i" }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        {% if item.completed %}
+                                            <span class="inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold 
+                                                         {% if item.score >= 8.0 %}bg-green-100 text-green-800
+                                                         {% elif item.score >= 5.0 %}bg-yellow-100 text-yellow-800
+                                                         {% else %}bg-red-100 text-red-800{% endif %}">
+                                                {{ item.score }} / 10.0
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
+                                                In Progress
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right space-x-2">
+                                        {% if item.completed %}
+                                            <a href="{% url 'results_view' item.id %}" 
+                                               class="inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all duration-200">
+                                                Review
+                                            </a>
+                                            <a href="{% url 'download_pdf' item.id %}" 
+                                               class="inline-flex items-center justify-center rounded-xl bg-purple-50 hover:bg-purple-100 px-3 py-1.5 text-xs font-semibold text-purple-700 transition-all duration-200">
+                                                PDF
+                                            </a>
+                                        {% else %}
+                                            <!-- Resume session -->
+                                            <a href="{% url 'question_view' item.id 1 %}" 
+                                               class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-200">
+                                                Resume
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty state -->
+            <div class="glass-card premium-shadow rounded-3xl p-12 text-center max-w-lg mx-auto border border-dashed border-slate-200">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 text-purple-600 mb-4">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold text-slate-900">No sessions yet</h3>
+                <p class="mt-1 text-xs text-slate-500">Get started by selecting a topic and difficulty to start your first mock interview.</p>
+                <div class="mt-6">
+                    <a href="{% url 'session_start' %}" class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-all duration-200">
+                        Create First Session
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
