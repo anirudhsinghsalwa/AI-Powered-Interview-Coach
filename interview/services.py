@@ -1725,16 +1725,26 @@ def generate_chat_reply(chat_session, user_message):
         return "I am currently offline. Please set a valid GEMINI_API_KEY to start interactive coaching!"
         
     try:
-        # Reconstruct history list
-        existing_history = []
-        db_messages = chat_session.messages.order_by('created_at')[:15]
+        # Reconstruct history list (latest 15 messages)
+        db_messages = chat_session.messages.order_by('-created_at')[:15]
+        db_messages = list(reversed(db_messages))
+        
+        contents = []
         for msg in db_messages:
-            existing_history.append(
+            contents.append(
                 types.Content(
                     role="user" if msg.sender == "user" else "model",
                     parts=[types.Part.from_text(text=msg.text)]
                 )
             )
+            
+        # Append the new user message to the contents payload
+        contents.append(
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=user_message)]
+            )
+        )
             
         system_instruction = (
             "You are a professional software engineering interviewer and coach. "
@@ -1744,21 +1754,19 @@ def generate_chat_reply(chat_session, user_message):
         if chat_session.resume_text:
             system_instruction += f"\nCandidate's Resume/CV:\n{chat_session.resume_text}\n"
             
-        chat = client.chats.create(
-            model="gemini-2.5-flash",
-            history=existing_history,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction
-            )
-        )
-        
         import time
         max_attempts = 3
         delay = 1.0  # seconds
         
         for attempt in range(1, max_attempts + 1):
             try:
-                response = chat.send_message(user_message)
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction
+                    )
+                )
                 return response.text
             except Exception as send_err:
                 send_err_msg = str(send_err)
