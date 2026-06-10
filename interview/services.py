@@ -1758,8 +1758,22 @@ def generate_chat_reply(chat_session, user_message):
             )
         )
         
-        response = chat.send_message(user_message)
-        return response.text
+        import time
+        max_attempts = 3
+        delay = 1.0  # seconds
+        
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = chat.send_message(user_message)
+                return response.text
+            except Exception as send_err:
+                send_err_msg = str(send_err)
+                if ("503" in send_err_msg or "429" in send_err_msg or "UNAVAILABLE" in send_err_msg or "500" in send_err_msg) and attempt < max_attempts:
+                    logger.warning(f"Gemini API transient error {send_err_msg}. Retrying attempt {attempt + 1}/{max_attempts} in {delay}s...")
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    raise send_err
         
     except Exception as e:
         error_msg = str(e)
@@ -1768,4 +1782,13 @@ def generate_chat_reply(chat_session, user_message):
             return "API Error: Access Denied. Your API key appears to be invalid, incorrect, or blocked. Please verify your GEMINI_API_KEY is a valid Google AI Studio key starting with AIzaSy."
         elif "429" in error_msg:
             return "API Error: Rate Limit Exceeded (429). Please wait a moment before sending another message."
+        elif "503" in error_msg or "UNAVAILABLE" in error_msg or "500" in error_msg:
+            return (
+                "⚠️ [AI Coach - Offline Fallback Mode]\n"
+                "Google's Gemini service is currently experiencing very high demand (503 Service Unavailable). "
+                "I am operating in offline coaching mode to keep our conversation going.\n\n"
+                "That is a great response. Could you explain the technical trade-offs of this approach, "
+                "or elaborate on any design decisions you would make here? Once the server demand settles, "
+                "we will resume live feedback!"
+            )
         return f"I encountered a connection error ({error_msg}). Please try again in a moment!"
