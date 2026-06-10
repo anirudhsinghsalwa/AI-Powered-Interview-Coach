@@ -1702,23 +1702,17 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
         error_msg = str(e)
         logger.error(f"Error calling Gemini API for evaluation: {e}. Falling back.")
         
-        if "403" in error_msg:
+        # If it's a structural key error (invalid/blocked key), warn the user
+        if "403" in error_msg or "API_KEY_INVALID" in error_msg or "not valid" in error_msg or "400" in error_msg:
             return {
                 "score": 0,
                 "strengths": "Evaluation paused.",
-                "weaknesses": "API Error: Invalid or blocked API key (403). Please verify your GEMINI_API_KEY in the environment.",
+                "weaknesses": "API Error: Invalid or blocked API key (403/400). Please verify your GEMINI_API_KEY is a valid key starting with AIzaSy or AQ.",
                 "improved_answer": "Check API settings to resume automated grading.",
                 "tips": "Verify key permissions and project settings."
             }
-        elif "429" in error_msg:
-            return {
-                "score": 0,
-                "strengths": "Evaluation paused.",
-                "weaknesses": "API Error: Rate limit exceeded (429). Too many requests.",
-                "improved_answer": "Please wait a moment before submitting another answer.",
-                "tips": "Try again in a few seconds."
-            }
         
+        # For transient rate limit (429) or service unavailable (503/500), fall back to local offline evaluator
         return get_fallback_evaluation(question_text, user_answer)
 
 
@@ -1779,9 +1773,16 @@ def generate_chat_reply(chat_session, user_message):
         error_msg = str(e)
         logger.error(f"Error in chat reply generation: {e}")
         if "403" in error_msg or "API_KEY_INVALID" in error_msg or "not valid" in error_msg or "400" in error_msg:
-            return "API Error: Access Denied. Your API key appears to be invalid, incorrect, or blocked. Please verify your GEMINI_API_KEY is a valid Google AI Studio key starting with AIzaSy."
+            return "API Error: Access Denied. Your API key appears to be invalid, incorrect, or blocked. Please verify your GEMINI_API_KEY is a valid Google AI Studio key starting with AIzaSy or AQ."
         elif "429" in error_msg:
-            return "API Error: Rate Limit Exceeded (429). Please wait a moment before sending another message."
+            return (
+                "⚠️ [AI Coach - Offline Fallback Mode]\n"
+                "Google's Gemini service is currently throttling requests (429 Rate Limit Exceeded). "
+                "I am operating in offline coaching mode to keep our conversation going.\n\n"
+                "That is a great response. Could you explain the technical trade-offs of this approach, "
+                "or elaborate on any design decisions you would make here? Once the rate limit resets, "
+                "we will resume live feedback!"
+            )
         elif "503" in error_msg or "UNAVAILABLE" in error_msg or "500" in error_msg:
             return (
                 "⚠️ [AI Coach - Offline Fallback Mode]\n"
