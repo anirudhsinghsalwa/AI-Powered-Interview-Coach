@@ -1553,7 +1553,7 @@ def generate_session_questions(topic, difficulty, mode, resume_text=None):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -1667,7 +1667,7 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -1751,7 +1751,7 @@ def generate_chat_reply(chat_session, user_message):
             system_instruction += f"\nCandidate's Resume/CV:\n{chat_session.resume_text}\n"
             
         chat = client.chats.create(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             history=existing_history,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction
