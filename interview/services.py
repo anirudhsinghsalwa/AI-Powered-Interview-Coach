@@ -1764,8 +1764,8 @@ def generate_chat_reply(chat_session, user_message):
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Error in chat reply generation: {e}")
-        if "403" in error_msg:
-            return "API Error: Access Denied (403). Your API key appears to be invalid or blocked. Please verify your environment configuration."
+        if "403" in error_msg or "API_KEY_INVALID" in error_msg or "not valid" in error_msg or "400" in error_msg:
+            return "API Error: Access Denied. Your API key appears to be invalid, incorrect, or blocked. Please verify your GEMINI_API_KEY is a valid Google AI Studio key starting with AIzaSy."
         elif "429" in error_msg:
             return "API Error: Rate Limit Exceeded (429). Please wait a moment before sending another message."
-        return "I encountered a connection error. Please try again in a moment!"
+        return f"I encountered a connection error ({error_msg}). Please try again in a moment!"
