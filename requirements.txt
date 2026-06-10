@@ -1,0 +1,8 @@
+Django>=5.0
+google-genai
+python-dotenv
+reportlab
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary

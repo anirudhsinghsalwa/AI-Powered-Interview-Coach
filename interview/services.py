@@ -1,20 +1,23 @@
 import os
 import json
 import logging
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-# Configure the Gemini API
+# Configure the Gemini API client using the new SDK
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = None
+
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini Client: {e}")
 else:
     logger.warning("GEMINI_API_KEY not found in environment. Running in offline/fallback mode.")
 
-# -------------------------------------------------------------------------
-# SUBJECT GROUP MAPPINGS FOR ROBUST FALLBACKS
-# -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 # MULTI-MODE FALLBACK DATA (MCQ, WRITTEN, CODING) FOR ALL 16 TOPICS
 # -------------------------------------------------------------------------
@@ -959,8 +962,13 @@ FALLBACK_QUESTIONS = {
             {
                 "type": "coding",
                 "question": "Write a SQL query using window functions to find the rank of employees by salary in each department.",
-                "options": {"A": "", "B": "", "C": "", "D": ""},
-                "correct_answer": "",
+                "options": {
+                    "A": "SELECT id, name, department_id, salary, ROW_NUMBER() OVER(PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees;",
+                    "B": "SELECT id, name, department_id, salary, DENSE_RANK() OVER(PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees;",
+                    "C": "SELECT id, name, department_id, salary, RANK() OVER(PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees;",
+                    "D": "SELECT id, name, department_id, salary, NTILE(4) OVER(PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees;"
+                },
+                "correct_answer": "B",
                 "expected_answer": "`SELECT id, name, department_id, salary, DENSE_RANK() OVER(PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees;`"
             }
         ]
@@ -1484,16 +1492,16 @@ def get_fallback_evaluation(question_text, user_answer):
     }
 
 # -------------------------------------------------------------------------
-# GEMINI API WRAPPERS
+# GEMINI API WRAPPERS USING THE NEW google-genai SDK
 # -------------------------------------------------------------------------
 
-def generate_session_questions(topic, difficulty, mode):
+def generate_session_questions(topic, difficulty, mode, resume_text=None):
     """
     Generate 5 tailored questions using the Gemini API.
     If the API key is not set, or an exception occurs, falls back to pre-defined questions.
     """
-    if not os.getenv("GEMINI_API_KEY"):
-        logger.info("No Gemini API key. Using fallback questions.")
+    if not client:
+        logger.info("No Gemini API key or initialization failed. Using fallback questions.")
         return get_fallback_questions(topic, difficulty, mode)
 
     topic_labels = {
@@ -1521,12 +1529,17 @@ def generate_session_questions(topic, difficulty, mode):
     Topic: {topic_desc}
     Difficulty level: {difficulty}
     Target Assessment Mode: {mode} (mixed, mcq, written, or coding)
-
+    """
+    
+    if resume_text:
+        prompt += f"\nCandidate's Resume/CV:\n{resume_text}\nTailor the questions specifically to test the candidate's skills, projects, and experiences mentioned in their resume."
+        
+    prompt += """
     You must return a JSON array containing exactly 5 question objects.
     Each object in the array must strictly have these keys:
     - "type": "mcq" | "written" | "coding"
     - "question": "Question text or coding problem statement"
-    - "options": {{"A": "option A", "B": "option B", "C": "option C", "D": "option D"}} (populate strings if type is "mcq", otherwise leave options empty strings like "")
+    - "options": {"A": "option A", "B": "option B", "C": "option C", "D": "option D"} (populate strings if type is "mcq", otherwise leave options empty strings like "")
     - "correct_answer": "A" | "B" | "C" | "D" (populate if type is "mcq", otherwise leave empty string "")
     - "expected_answer": "Brief explanation or expected solution snippet"
 
@@ -1539,15 +1552,16 @@ def generate_session_questions(topic, difficulty, mode):
     """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
         
         # Parse output
         raw_text = response.text.strip()
-        # Clean potential markdown wrappers if the model ignored request
         if raw_text.startswith("```"):
             lines = raw_text.splitlines()
             if lines[0].startswith("```json"):
@@ -1557,10 +1571,8 @@ def generate_session_questions(topic, difficulty, mode):
         
         questions = json.loads(raw_text)
         if isinstance(questions, list) and len(questions) >= 5:
-            # Validate properties
             valid_questions = []
             for q in questions[:5]:
-                # Standardize structures
                 opts = q.get("options", {})
                 valid_questions.append({
                     "type": q.get("type", "written"),
@@ -1579,7 +1591,6 @@ def generate_session_questions(topic, difficulty, mode):
     except Exception as e:
         logger.error(f"Error calling Gemini API for questions: {e}. Falling back.")
         fallback_qs = get_fallback_questions(topic, difficulty, mode)
-        # Convert fallback format
         valid_fallback = []
         for q in fallback_qs:
             opts = q.get("options", {})
@@ -1603,11 +1614,10 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
     Returns a structured dictionary with keys: score (int), strengths (str), weaknesses (str),
     improved_answer (str), and tips (str).
     """
-    if not os.getenv("GEMINI_API_KEY"):
+    if not client:
         logger.info("No Gemini API key. Using fallback evaluator.")
         return get_fallback_evaluation(question_text, user_answer)
 
-    # Customize prompt based on type
     if question_type == "coding":
         prompt_type_guidelines = """
         This is a coding interview question.
@@ -1656,14 +1666,15 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
     """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
         
         raw_text = response.text.strip()
-        # Clean potential markdown wrappers
         if raw_text.startswith("```"):
             lines = raw_text.splitlines()
             if lines[0].startswith("```json"):
@@ -1673,7 +1684,6 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
                 
         evaluation = json.loads(raw_text)
         
-        # Sanitize and ensure format compliance
         score = evaluation.get("score", 5)
         try:
             score = int(score)
@@ -1689,5 +1699,73 @@ def evaluate_candidate_answer(question_text, user_answer, question_type="written
         }
         
     except Exception as e:
+        error_msg = str(e)
         logger.error(f"Error calling Gemini API for evaluation: {e}. Falling back.")
+        
+        if "403" in error_msg:
+            return {
+                "score": 0,
+                "strengths": "Evaluation paused.",
+                "weaknesses": "API Error: Invalid or blocked API key (403). Please verify your GEMINI_API_KEY in the environment.",
+                "improved_answer": "Check API settings to resume automated grading.",
+                "tips": "Verify key permissions and project settings."
+            }
+        elif "429" in error_msg:
+            return {
+                "score": 0,
+                "strengths": "Evaluation paused.",
+                "weaknesses": "API Error: Rate limit exceeded (429). Too many requests.",
+                "improved_answer": "Please wait a moment before submitting another answer.",
+                "tips": "Try again in a few seconds."
+            }
+        
         return get_fallback_evaluation(question_text, user_answer)
+
+
+def generate_chat_reply(chat_session, user_message):
+    """
+    Sends the message to Gemini Chat with conversation history and optional resume context.
+    Returns the AI's reply.
+    """
+    if not client:
+        return "I am currently offline. Please set a valid GEMINI_API_KEY to start interactive coaching!"
+        
+    try:
+        # Reconstruct history list
+        existing_history = []
+        db_messages = chat_session.messages.order_by('created_at')[:15]
+        for msg in db_messages:
+            existing_history.append(
+                types.Content(
+                    role="user" if msg.sender == "user" else "model",
+                    parts=[types.Part.from_text(text=msg.text)]
+                )
+            )
+            
+        system_instruction = (
+            "You are a professional software engineering interviewer and coach. "
+            "Adopt an encouraging, professional, and coaching tone. "
+            "Ask clarifying questions, evaluate answers, and guide the candidate to optimize their approaches."
+        )
+        if chat_session.resume_text:
+            system_instruction += f"\nCandidate's Resume/CV:\n{chat_session.resume_text}\n"
+            
+        chat = client.chats.create(
+            model="gemini-2.5-flash",
+            history=existing_history,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction
+            )
+        )
+        
+        response = chat.send_message(user_message)
+        return response.text
+        
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Error in chat reply generation: {e}")
+        if "403" in error_msg:
+            return "API Error: Access Denied (403). Your API key appears to be invalid or blocked. Please verify your environment configuration."
+        elif "429" in error_msg:
+            return "API Error: Rate Limit Exceeded (429). Please wait a moment before sending another message."
+        return "I encountered a connection error. Please try again in a moment!"

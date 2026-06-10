@@ -13,8 +13,8 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-from .models import InterviewSession, InterviewQuestion
-from .services import generate_session_questions, evaluate_candidate_answer
+from .models import InterviewSession, InterviewQuestion, ChatSession, ChatMessage
+from .services import generate_session_questions, evaluate_candidate_answer, generate_chat_reply
 
 # -------------------------------------------------------------------------
 # AUTHENTICATION VIEWS
@@ -139,17 +139,20 @@ def session_start(request):
             messages.error(request, "Invalid topic, difficulty, or mode selection.")
             return redirect('session_start')
             
+        resume_text = request.POST.get('resume_text', '').strip() or None
+        
         # Create a new session
         session = InterviewSession.objects.create(
             user=request.user,
             topic=topic,
             difficulty=difficulty,
             mode=mode,
+            resume_text=resume_text,
             completed=False
         )
         
         # Generate 5 questions via service (Gemini API / Fallback)
-        questions_list = generate_session_questions(topic, difficulty, mode)
+        questions_list = generate_session_questions(topic, difficulty, mode, resume_text=resume_text)
         
         # Save questions in database
         for index, q_data in enumerate(questions_list, start=1):
@@ -554,3 +557,73 @@ def download_pdf(request, session_id):
     response['Content-Disposition'] = f'attachment; filename="Interview_Report_Session_{session.id}.pdf"'
     response.write(pdf_content)
     return response
+
+
+# -------------------------------------------------------------------------
+# AI CHAT COACH VIEWS
+# -------------------------------------------------------------------------
+
+@login_required
+def chat_start(request):
+    if request.method == 'POST':
+        resume_text = request.POST.get('resume_text', '').strip() or None
+        # Create a new chat session
+        chat_session = ChatSession.objects.create(
+            user=request.user,
+            resume_text=resume_text
+        )
+        # Add initial greeting message
+        welcome_text = "Hello! I am your AI Interview Coach. "
+        if resume_text:
+            welcome_text += "I've reviewed your resume and I'm ready to grill you on your skills, experience, and projects. Let's get started! What position are you interviewing for?"
+        else:
+            welcome_text += "I can help you practice coding, system design, DSA, and behavioral interviews. To start, could you tell me what role you're preparing for, or share your resume context?"
+            
+        ChatMessage.objects.create(
+            session=chat_session,
+            sender='ai',
+            text=welcome_text
+        )
+        return redirect('chat_room', chat_id=chat_session.id)
+        
+    return render(request, 'interview/chat_start.html')
+
+
+@login_required
+def chat_room(request, chat_id):
+    chat_session = get_object_or_404(ChatSession, id=chat_id, user=request.user)
+    messages = chat_session.messages.order_by('created_at')
+    
+    context = {
+        'chat_session': chat_session,
+        'chat_messages': messages,
+    }
+    return render(request, 'interview/chat_room.html', context)
+
+
+@login_required
+def chat_send(request, chat_id):
+    if request.method != 'POST':
+        return redirect('chat_room', chat_id=chat_id)
+        
+    chat_session = get_object_or_404(ChatSession, id=chat_id, user=request.user)
+    user_text = request.POST.get('message', '').strip()
+    
+    if user_text:
+        # Save user message
+        ChatMessage.objects.create(
+            session=chat_session,
+            sender='user',
+            text=user_text
+        )
+        
+        # Generate and save AI reply using Gemini service
+        ai_reply = generate_chat_reply(chat_session, user_text)
+        
+        ChatMessage.objects.create(
+            session=chat_session,
+            sender='ai',
+            text=ai_reply
+        )
+        
+    return redirect('chat_room', chat_id=chat_id)

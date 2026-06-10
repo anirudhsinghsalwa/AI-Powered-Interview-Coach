@@ -42,6 +42,7 @@ class InterviewSession(models.Model):
     completed = models.BooleanField(default=False)
     score = models.FloatField(null=True, blank=True)  # Store the final average score (out of 10)
     current_question_index = models.IntegerField(default=1)  # Tracks active question order index (1-based)
+    resume_text = models.TextField(null=True, blank=True)  # Optional context resume input
     
     def __str__(self):
         topic_name = dict(self.TOPIC_CHOICES).get(self.topic, self.topic)
@@ -79,3 +80,21 @@ class InterviewQuestion(models.Model):
         
     def __str__(self):
         return f"Q{self.order} for Session {self.session.id}"
+
+class ChatSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sessions', null=True, blank=True)
+    resume_text = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        user_str = self.user.username if self.user else "Anonymous"
+        return f"Chat Session {self.id} for {user_str} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+class ChatMessage(models.Model):
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=10, choices=[('user', 'User'), ('ai', 'AI')])
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Message {self.id} in Chat {self.session.id} by {self.sender}"

@@ -1,0 +1,106 @@
+{% extends 'interview/base.html' %}
+
+{% block title %}AI Interview Chat Coach - Interview Coach Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto flex flex-col h-[calc(100vh-12rem)]">
+    <!-- Breadcrumb & Header info -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <nav class="flex text-sm text-slate-500">
+            <a href="{% url 'dashboard' %}" class="hover:text-purple-600 transition-colors duration-150">Dashboard</a>
+            <span class="mx-2">&gt;</span>
+            <span class="text-slate-800 font-medium">AI Chat Coach</span>
+        </nav>
+        
+        <div class="text-xs text-slate-400">
+            {% if chat_session.resume_text %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium border border-purple-100">
+                    CV Customization Active
+                </span>
+            {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-50 text-slate-500 font-medium border border-slate-100">
+                    Standard Mode
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Chat Workspace Card -->
+    <div class="glass-card premium-shadow rounded-3xl border border-slate-100 flex flex-col flex-grow overflow-hidden">
+        
+        <!-- Chat Area header -->
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl">🤖</span>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">AI Coach Workspace</h3>
+                    <p class="text-[10px] text-slate-400">Active session #{{ chat_session.id }}</p>
+                </div>
+            </div>
+            <a href="{% url 'chat_start' %}" class="text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors duration-150">
+                New Chat &rarr;
+            </a>
+        </div>
+
+        <!-- Chat log area (scrollable) -->
+        <div class="flex-grow overflow-y-auto p-6 space-y-6 bg-slate-50/25" id="chat-messages-container">
+            {% for msg in chat_messages %}
+                {% if msg.sender == 'ai' %}
+                    <!-- AI message bubble -->
+                    <div class="flex items-start space-x-3 max-w-[85%]">
+                        <div class="h-8 w-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-sm text-sm flex-shrink-0">
+                            🤖
+                        </div>
+                        <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm">
+                            <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">AI Coach</span>
+                            <div class="text-sm text-slate-700 leading-relaxed space-y-2 whitespace-pre-wrap">{{ msg.text }}</div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- User message bubble -->
+                    <div class="flex items-start justify-end space-x-3 w-full">
+                        <div class="flex items-start space-x-3 max-w-[85%] justify-end">
+                            <div class="bg-purple-600 text-white rounded-2xl rounded-tr-none p-4 shadow-sm">
+                                <span class="block text-[10px] font-semibold text-purple-200 uppercase tracking-wider mb-1">You</span>
+                                <div class="text-sm leading-relaxed space-y-2 whitespace-pre-wrap">{{ msg.text }}</div>
+                            </div>
+                            <div class="h-8 w-8 rounded-xl bg-purple-100 flex items-center justify-center shadow-sm text-sm flex-shrink-0 text-purple-700 font-bold uppercase">
+                                {{ user.username|slice:":1" }}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div id="bottom"></div>
+        </div>
+
+        <!-- Chat input form (fixed at bottom) -->
+        <div class="p-4 border-t border-slate-100 bg-white flex-shrink-0">
+            <form action="{% url 'chat_send' chat_session.id %}#bottom" method="POST" class="flex items-end space-x-3">
+                {% csrf_token %}
+                <div class="flex-grow">
+                    <textarea name="message" rows="2" required placeholder="Type your response or ask the coach a question..."
+                              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all duration-200 resize-none"></textarea>
+                </div>
+                <button type="submit" 
+                        class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md hover:opacity-95 hover:shadow-lg transition-all duration-200">
+                    <svg class="h-5 w-5 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Auto-scroll to bottom of the chat area on load
+    window.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('chat-messages-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    });
+</script>
+{% endblock %}

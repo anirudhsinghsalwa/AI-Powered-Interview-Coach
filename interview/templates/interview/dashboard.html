@@ -26,6 +26,10 @@
                    class="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-purple-900 shadow-md hover:bg-slate-50 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
                     Start Interview
                 </a>
+                <a href="{% url 'chat_start' %}" 
+                   class="inline-flex items-center justify-center rounded-2xl bg-indigo-500/30 border border-indigo-400/30 px-6 py-4 text-sm font-semibold text-white shadow-md hover:bg-indigo-500/40 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+                    💬 AI Chat Coach
+                </a>
                 <a href="{% url 'session_start' %}?mode=mcq" 
                    class="inline-flex items-center justify-center rounded-2xl bg-purple-600/30 border border-purple-500/30 px-6 py-4 text-sm font-semibold text-white shadow-md hover:bg-purple-600/40 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
                     Start MCQ Test
