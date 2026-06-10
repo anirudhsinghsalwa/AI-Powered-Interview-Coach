@@ -20,12 +20,22 @@ from .services import generate_session_questions, evaluate_candidate_answer, gen
 # AUTHENTICATION VIEWS
 # -------------------------------------------------------------------------
 
+from django import forms
+from django.contrib.auth.models import User
+
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True, label="Email Address")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('email',)
+
 def user_signup(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
         
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
@@ -36,7 +46,7 @@ def user_signup(request):
                 for error in errors:
                     messages.error(request, f"{field.capitalize()}: {error}")
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, 'interview/signup.html', {'form': form})
 
 
