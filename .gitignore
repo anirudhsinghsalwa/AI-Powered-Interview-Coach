@@ -19,3 +19,6 @@ Thumbs.db
 
 # Static files
 staticfiles/
+
+# Interview Guide
+PROJECT_MASTER_GUIDE_FOR_INTERVIEWS.md
